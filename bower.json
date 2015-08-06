@@ -1,0 +1,19 @@
+{
+  "name": "pml-cli",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "build",
+    "lib",
+    "node_modules",
+    "test",
+    "Gruntfile.js",
+    "package.json"
+  ],
+  "devDependencies": {
+    "illa": "andraaspar/illa#v2.3",
+    "node-d-ts": "andraaspar/node-d-ts#v2",
+    "pml": "andraaspar/pml#v1"
+  }
+}
