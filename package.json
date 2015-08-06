@@ -1,8 +1,27 @@
 {
-  "private": true,
+  "name": "pml-cli",
+  "version": "1.0.0",
+  "description": "Commad line interface for the PML library.",
+  "keywords": [
+    "PML",
+    "command line",
+    "lint",
+    "tidy"
+  ],
+  "author": "András Parditka",
+  "homepage": "https://github.com/andraaspar/pml-cli",
+  "repository": "andraaspar/pml-cli",
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.12"
+  },
+  "bin": {
+    "pml": "build/pml-cli.js"
+  },
   "devDependencies": {
     "grunt": "0.4.5",
     "grunt-contrib-clean": "0.6.0",
+    "grunt-contrib-concat": "^0.5.1",
     "grunt-contrib-copy": "^0.5.0",
     "grunt-sas": "1.2.0",
     "grunt-shell": "1.1.2",

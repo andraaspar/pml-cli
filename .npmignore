@@ -1,0 +1,11 @@
+/.settings/
+/bower_components/
+/lib/
+/node_modules/
+/src/
+/tmp/
+/tmp2/
+/.gitignore
+/.project
+/bower.json
+/Gruntfile.js

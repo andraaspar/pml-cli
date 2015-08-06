@@ -9,54 +9,38 @@ module.exports = function(grunt) {
 			
 			// Variables to check
 			
-//			CSS_NAME: 'desktop',
-//			CSS_PATH: '/style/',
 			JS_NAME: 'pml-cli',
 			JS_PATH: '',
-//			JS_TO_CONCAT: [
-//				'<%= MINIFIED_JS_IN_TEMP %>'
-//			],
-//			LODASH_INCLUDE: ['cloneDeep', 'isEqual'],
-//			MAIN_LESS: '<%= SRC_FOLDER %>/less/_desktop.less',
+			JS_TO_CONCAT: [
+				'<%= SRC_FOLDER %>/_concat/header.txt',
+				'<%= JS_IN_TEMP %>'
+			],
 			MAIN_TS: '<%= SRC_FOLDER %>/ts/main/Main.ts',
 			TEST_COUNT: 0,
 			
 			// Other variables
 			
 			BUILD_FOLDER: 'build',
-//			JS_IN_TEMP: '<%= TMP_FOLDER %>/script/<%= JS_NAME %>.js', 
+			JS_IN_TEMP: '<%= TMP_FOLDER %>/<%= JS_NAME %>.js', 
 			KAPOCS_PATTERN: ['**'],
-//			LODASH_IN_TEMP: '<%= TMP_FOLDER %>/script/lodash.js',
 //			MINIFIED_JS_IN_TEMP: '<%= TMP_FOLDER %>/script/<%= JS_NAME %>.min.js', 
 			SRC_FOLDER: 'src',
 			TMP_FOLDER: 'tmp',
 			
 			// Targets
 			
-//			appcache: {
-//				compile: {
-//					options: {
-//						basePath: '<%= BUILD_FOLDER %>'
-//					},
-//					dest: '<%= BUILD_FOLDER %>/index.appcache',
-//					cache: {
-//						patterns: ['<%= BUILD_FOLDER %>/**', '!<%= BUILD_FOLDER %>/*.html']
-//					},
-//					network: '*'
-//				}
-//			},
 			clean: {
 				compile: [
 					'<%= BUILD_FOLDER %>',
 					'<%= TMP_FOLDER %>'
 				]
 			},
-//			concat: {
-//				compile: {
-//					src: '<%= JS_TO_CONCAT %>',
-//					dest: '<%= TMP_FOLDER %>/_asset_templates<%= JS_PATH %><%= JS_NAME %>.min.js'
-//				}
-//			},
+			concat: {
+				compile: {
+					src: '<%= JS_TO_CONCAT %>',
+					dest: '<%= BUILD_FOLDER %>/<%= JS_PATH %><%= JS_NAME %>.js'
+				}
+			},
 			copy: {
 				compile: {
 					files:[{
@@ -79,93 +63,12 @@ module.exports = function(grunt) {
 //					]
 //				}
 			},
-//			kapocs: {
-//				compile: {
-//					assets: [{
-//						expand: true,
-//						cwd: '<%= SRC_FOLDER %>/_assets',
-//						dot: true,
-//						src: '<%= KAPOCS_PATTERN %>',
-//						dest: '<%= BUILD_FOLDER %>'
-//					}, {
-//						expand: true,
-//						cwd: '<%= TMP_FOLDER %>/_assets',
-//						dot: true,
-//						src: '<%= KAPOCS_PATTERN %>',
-//						dest: '<%= BUILD_FOLDER %>'
-//					}],
-//					assetTemplates: [{
-//						expand: true,
-//						cwd: '<%= SRC_FOLDER %>/_asset_templates',
-//						dot: true,
-//						src: '<%= KAPOCS_PATTERN %>',
-//						dest: '<%= BUILD_FOLDER %>'
-//					}, {
-//						expand: true,
-//						cwd: '<%= TMP_FOLDER %>/_asset_templates',
-//						dot: true,
-//						src: '<%= KAPOCS_PATTERN %>',
-//						dest: '<%= BUILD_FOLDER %>'
-//					}],
-//					templates: [{
-//						expand: true,
-//						cwd: '<%= SRC_FOLDER %>/_templates',
-//						dot: true,
-//						src: '<%= KAPOCS_PATTERN %>',
-//						dest: '<%= BUILD_FOLDER %>'
-//					}, {
-//						expand: true,
-//						cwd: '<%= TMP_FOLDER %>/_templates',
-//						dot: true,
-//						src: '<%= KAPOCS_PATTERN %>',
-//						dest: '<%= BUILD_FOLDER %>'
-//					}]
-//				}
-//			},
-//			less: {
-//				compile: {
-//					options: {
-//						compress: true
-//					},
-//					files: {
-//						'<%= TMP_FOLDER %>/_asset_templates<%= CSS_PATH %><%= CSS_NAME %>.css': '<%= MAIN_LESS %>'
-//					}
-//				},
-//				debug: {
-//					files: {
-//						'<%= TMP_FOLDER %>/_asset_templates<%= CSS_PATH %><%= CSS_NAME %>.css': '<%= MAIN_LESS %>'
-//					}
-//				},
-//				tests: {
-//					files: {/* Tests will be injected here. */}
-//				}
-//			},
-//			lodash: {
-//				compile: {
-//					options: {
-//						// modern, strict, compat
-//						modifier: 'compat',
-//						include: '<%= LODASH_INCLUDE %>'
-//					},
-//					dest: '<%= LODASH_IN_TEMP %>'
-//				}
-//			},
-			typescript: {
-				compile: {
-					files: {
-						'<%= BUILD_FOLDER %>/<%= JS_PATH %><%= JS_NAME %>.js': '<%= MAIN_TS %>'
-					}
-				},
-				tests: {
-					files: {/* Tests will be injected here. */}
-				}
-			},
 			sas: {
 				update: {/* No options required. */}
 			},
 			shell: {
 				compile: {
-					command: '"node_modules/.bin/tsc" --noLib --out "<%= BUILD_FOLDER %>/<%= JS_PATH %><%= JS_NAME %>.js" "<%= MAIN_TS %>"'
+					command: '"node_modules/.bin/tsc" --noLib --out "<%= JS_IN_TEMP %>" "<%= MAIN_TS %>"'
 				},
 				update: {
 					command: [
@@ -198,43 +101,26 @@ module.exports = function(grunt) {
 		return config;
 	})());
 	
-//	grunt.loadNpmTasks('grunt-appcache');
 	grunt.loadNpmTasks('grunt-contrib-clean');
-//	grunt.loadNpmTasks('grunt-contrib-concat');
+	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-copy');
-//	grunt.loadNpmTasks('grunt-contrib-less');
 //	grunt.loadNpmTasks('grunt-contrib-uglify');
-//	grunt.loadNpmTasks('grunt-kapocs');
-//	grunt.loadNpmTasks('grunt-lodash');
 	grunt.loadNpmTasks('grunt-sas');
 	grunt.loadNpmTasks('grunt-shell');
-//	grunt.loadNpmTasks('grunt-typescript');
 	
 	grunt.registerTask('compile', [
 		'clean:compile',
 		'copy:compile',
 		'shell:compile',
-//		'typescript:compile',
-//		'typescript:tests',
 //		'uglify:compile',
-//		'lodash:compile',
-//		'concat:compile',
-//		'less:compile',
-//		'kapocs:compile',
-//		'appcache:compile',
+		'concat:compile',
 	]);
 	grunt.registerTask('debug', [
 		'clean:compile',
 		'copy:compile',
 		'shell:compile',
-//		'typescript:compile',
-//		'typescript:tests',
 //		'copy:debug',
-//		'lodash:compile',
-//		'concat:compile',
-//		'less:debug',
-//		'kapocs:compile',
-//		'appcache:compile',
+		'concat:compile',
 	]);
 	grunt.registerTask('update', [
 		'shell:update',
