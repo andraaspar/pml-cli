@@ -3,6 +3,12 @@ module.exports = function(grunt) {
 	
 	grunt.initConfig((function() {
 		
+		var fs = require('fs');
+		
+		var packageJson = fs.readFileSync('package.json', 'utf8');
+		var packageObj = JSON.parse(packageJson);
+		var VERSION = packageObj.version;
+		
 		// Config template, completed by JS below
 		
 		var config = {
@@ -37,6 +43,11 @@ module.exports = function(grunt) {
 			},
 			concat: {
 				compile: {
+					options: {
+						process: function(contents, path) {
+							return contents.replace(/___PACKAGE_VERSION___/g, VERSION);
+						}
+					},
 					src: '<%= JS_TO_CONCAT %>',
 					dest: '<%= BUILD_FOLDER %>/<%= JS_PATH %><%= JS_NAME %>.js'
 				}
