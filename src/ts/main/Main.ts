@@ -33,9 +33,18 @@ module pml_cli {
 		private outFilePath: string;
 		private isOverwriteAllowed: boolean = false;
 		private indentChar: string;
+		private eolChar: string;
+		
+		private convertIgnoredValueToPair: boolean;
+		
+		private noEndTags: string[];
+		private inlineTags: string[];
+		private inlineDependingOnContentTags: string[];
+		private nonReplaceableCharacterTags: string[];
+		private preformattedTags: string[];
 
 		constructor() {
-			this.log(chalk.bold('Pair Markup Language processor.') + '   Version: ___PACKAGE_VERSION___\n');
+			this.log(chalk.bold('Par Markup Language processor.') + '   Version: ___PACKAGE_VERSION___\n');
 			
 			this.args = process.argv.slice(2);
 			//illa.Log.info(chalk.cyan('Arguments: ') + args.join(', '));
@@ -74,6 +83,12 @@ module pml_cli {
 					if (illa.isString(this.indentChar)) {
 						tidier.setIndentChar(this.indentChar);
 					}
+					if (illa.isString(this.eolChar)) {
+						tidier.setEolChar(this.eolChar);
+					}
+					if (illa.isBoolean(this.convertIgnoredValueToPair)) {
+						tidier.setConvertIgnoredValueToPair(this.convertIgnoredValueToPair);
+					}
 					
 					var outFileContents = tidier.tidy(this.inFileContents);
 					
@@ -90,14 +105,30 @@ module pml_cli {
 					}
 					this.checkOutFileExists();
 					
-					var parser = new pml.Parser();
-					
 					var htmlStringer = new pml.HtmlStringer();
 					if (illa.isString(this.indentChar)) {
 						htmlStringer.setIndentChar(this.indentChar);
 					}
+					if (illa.isString(this.eolChar)) {
+						htmlStringer.setEolChar(this.eolChar);
+					}
+					if (illa.isArray(this.noEndTags)) {
+						htmlStringer.setNoEndTags(this.noEndTags);
+					}
+					if (illa.isArray(this.inlineTags)) {
+						htmlStringer.setInlineTags(this.inlineTags);
+					}
+					if (illa.isArray(this.inlineDependingOnContentTags)) {
+						htmlStringer.setInlineDependingOnContentTags(this.inlineDependingOnContentTags);
+					}
+					if (illa.isArray(this.nonReplaceableCharacterTags)) {
+						htmlStringer.setNonReplaceableCharacterTags(this.nonReplaceableCharacterTags);
+					}
+					if (illa.isArray(this.preformattedTags)) {
+						htmlStringer.setPreformattedTags(this.preformattedTags);
+					}
 					
-					var outFileContents = htmlStringer.stringify(parser.parse(this.inFileContents));
+					var outFileContents = htmlStringer.stringify(pml.Parser.parse(this.inFileContents));
 					this.writeOutput(this.outFilePath, outFileContents);
 					break;
 				case '?':
@@ -113,16 +144,33 @@ t, tidy ................... Tidies the input file.
 l, lint ................... Lints the input file.
 `);
 					this.log(chalk.bold('\nOptions for HTML mode:') + `
--o, --out [output file] ... Specifies output file path. If not specified,
-                            defaults to stdout.
--ow, --overwrite .......... Overwrite existing output file(s).
+--eol-char [string] ....... Specifies the character(s) used for line breaks.
 --indent-char [string] .... Specifies the character(s) used for indentation.
+--inline-tags [pml] ....... Names of tags that are inline. Ex. <span>. Pair
+                            keys will be read from [pml]'s root.
+--inline-doc-tags [pml] ... Names of tags that are inline only if their child
+                            tags are all inline. Ex. <a>. Pair keys will be
+                            read from [pml]'s root.
+--no-end-tags [pml] ....... Names of tags that have no closing tag. Ex. <img>.
+                            Pair keys will be read from [pml]'s root.
+--nrc-tags [pml] .......... Names of non-replaceable character tags. Ex.
+                            <script>. Pair keys will be read from [pml]'s
+                            root.
+--out, -o [output file] ... Specifies output file path. If not specified,
+                            defaults to stdout.
+--overwrite, -ow .......... Overwrite existing output file(s).
+--pre-tags [pml] .......... Names of preformatted tags. Ex. <pre>. Pair keys
+                            will be read from [pml]'s root.
 `);
 					this.log(chalk.bold('\nOptions for Tidy mode:') + `
--o, --out [output file] ... Specifies output file path. If not specified,
-                            defaults to stdout.
--ow, --overwrite .......... Overwrite existing output file(s).
+--eol-char [string] ....... Specifies the character(s) used for line breaks.
+--ignored-to-pair, -i2p ... Convert ignored values (text next to pairs) to a
+                            pair rather than a comment.
 --indent-char [string] .... Specifies the character(s) used for indentation.
+--out, -o [output file] ... Specifies output file path. If not specified,
+                            defaults to stdout.
+--overwrite, -ow .......... Overwrite existing output file(s).
+--overwrite-source ........ Overwrite input file(s) with the new content.
 `);
 					break;
 				default:
@@ -136,6 +184,60 @@ l, lint ................... Lints the input file.
 			for (var i = 0, n = this.args.length; i < n; i++) {
 				var arg = this.args[i];
 				switch (arg) {
+					case '--eol-char':
+						this.eolChar = this.args[++i];
+						if (!illa.isString(this.eolChar)) {
+							this.error(arg + ' is missing the string parameter.');
+							this.fail(1);
+						}
+						break;
+					case '--i2p':
+					case '--ignored-to-pair':
+						this.convertIgnoredValueToPair = true;
+						break;
+					case '--indent-char':
+						this.indentChar = this.args[++i];
+						if (!illa.isString(this.indentChar)) {
+							this.error(arg + ' is missing the string parameter.');
+							this.fail(1);
+						}
+						break;
+					case '--inline-doc-tags':
+						try {
+							this.inlineDependingOnContentTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+						} catch (e) {
+							this.error(e);
+							this.error(arg + ' needs valid PML as parameter.');
+							this.fail(1);
+						}
+						break;
+					case '--inline-tags':
+						try {
+							this.inlineTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+						} catch (e) {
+							this.error(e);
+							this.error(arg + ' needs valid PML as parameter.');
+							this.fail(1);
+						}
+						break;
+					case '--no-end-tags':
+						try {
+							this.noEndTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+						} catch (e) {
+							this.error(e);
+							this.error(arg + ' needs valid PML as parameter.');
+							this.fail(1);
+						}
+						break;
+					case '--nrc-tags':
+						try {
+							this.nonReplaceableCharacterTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+						} catch (e) {
+							this.error(e);
+							this.error(arg + ' needs valid PML as parameter.');
+							this.fail(1);
+						}
+						break;
 					case '-o':
 					case '--out':
 						this.outFilePath = this.args[++i];
@@ -148,10 +250,16 @@ l, lint ................... Lints the input file.
 					case '--overwrite':
 						this.isOverwriteAllowed = true;
 						break;
-					case '--indent-char':
-						this.indentChar = this.args[++i];
-						if (!illa.isString(this.indentChar)) {
-							this.error(arg + ' is missing the string parameter.');
+					case '--overwrite-source':
+						this.outFilePath = this.inFilePath;
+						this.isOverwriteAllowed = true;
+						break;
+					case '--pre-tags':
+						try {
+							this.preformattedTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+						} catch (e) {
+							this.error(e);
+							this.error(arg + ' needs valid PML as parameter.');
 							this.fail(1);
 						}
 						break;
@@ -160,6 +268,14 @@ l, lint ................... Lints the input file.
 						this.fail(1);
 				}
 			}
+		}
+		
+		getChildKeys(pair: pml.Pair): string[] {
+			var result: string[] = [];
+			for (var i = 0, n = pair.children.length; i < n; i++) {
+				result.push(pair.children[i].key);
+			}
+			return result;
 		}
 		
 		loadInFile(): void {
