@@ -6,3 +6,5 @@
 /tmp2/
 /lib/
 /build/
+/test/*.html
+/test/out*.pml

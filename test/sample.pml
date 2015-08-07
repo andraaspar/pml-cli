@@ -51,7 +51,7 @@ test►
 		<td>Cell 4</td><td>Cell 5</td><td>Cell 6</td>
 	</tr>
 </table>►
-		►►►»◄div
+		►►►»«This comment is here as a test.»◄div
 		◄p•This would« quite
 probably» render as:►
 		◄table•
