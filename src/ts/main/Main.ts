@@ -167,7 +167,7 @@ h, html ................... Generates HTML from the input file.
 t, tidy ................... Tidies the input file.
 l, lint ................... Lints the input file.
 `);
-					this.log(chalk.bold('\nOptions for HTML mode:') + `
+					this.log(chalk.bold('Options for HTML mode:') + `
 --attribute-char [string] . Set the character that attribute node names start
                             with. Default: '@'
 --compress, -c ............ Remove unnecessary white space.
@@ -195,7 +195,7 @@ l, lint ................... Lints the input file.
 --pre-tags [pml] .......... Names of preformatted tags. Ex. <pre>. Node names
                             will be read from [pml]'s root.
 `);
-					this.log(chalk.bold('\nOptions for Tidy mode:') + `
+					this.log(chalk.bold('Options for Tidy mode:') + `
 --eol-char [string] ....... Specifies the character(s) used for line breaks.
 --ignored-to-node, -i2n ... Convert ignored values (text outside child nodes)
                             to a node rather than a comment.
