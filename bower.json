@@ -14,6 +14,6 @@
   "devDependencies": {
     "illa": "andraaspar/illa#v2.3",
     "node-d-ts": "andraaspar/node-d-ts#v2",
-    "pml": "andraaspar/pml#v1"
+    "pml": "andraaspar/pml#v1.2"
   }
 }

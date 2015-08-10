@@ -35,13 +35,19 @@ module pml_cli {
 		private indentChar: string;
 		private eolChar: string;
 		
-		private convertIgnoredValueToPair: boolean;
+		private convertIgnoredValueToNode: boolean;
 		
 		private noEndTags: string[];
 		private inlineTags: string[];
 		private inlineDependingOnContentTags: string[];
 		private nonReplaceableCharacterTags: string[];
 		private preformattedTags: string[];
+		private noLineBreakExpansionTags: string[];
+		private prettyPrint: boolean;
+		private tabExpansion: string;
+		private expandLineBreaks: boolean;
+		private expandTabs: boolean;
+		private attributeChar: string;
 
 		constructor() {
 			this.log(chalk.bold('Par Markup Language processor.') + '   Version: ___PACKAGE_VERSION___\n');
@@ -86,8 +92,8 @@ module pml_cli {
 					if (illa.isString(this.eolChar)) {
 						tidier.setEolChar(this.eolChar);
 					}
-					if (illa.isBoolean(this.convertIgnoredValueToPair)) {
-						tidier.setConvertIgnoredValueToPair(this.convertIgnoredValueToPair);
+					if (illa.isBoolean(this.convertIgnoredValueToNode)) {
+						tidier.setConvertIgnoredValueToNode(this.convertIgnoredValueToNode);
 					}
 					
 					var outFileContents = tidier.tidy(this.inFileContents);
@@ -127,6 +133,24 @@ module pml_cli {
 					if (illa.isArray(this.preformattedTags)) {
 						htmlStringer.setPreformattedTags(this.preformattedTags);
 					}
+					if (illa.isArray(this.noLineBreakExpansionTags)) {
+						htmlStringer.setNoLineBreakExpansionTags(this.noLineBreakExpansionTags);
+					}
+					if (illa.isBoolean(this.prettyPrint)) {
+						htmlStringer.setPrettyPrint(this.prettyPrint);
+					}
+					if (illa.isString(this.tabExpansion)) {
+						htmlStringer.setTabExpansion(this.tabExpansion);
+					}
+					if (illa.isBoolean(this.expandLineBreaks)) {
+						htmlStringer.setExpandLineBreaks(this.expandLineBreaks);
+					}
+					if (illa.isBoolean(this.expandTabs)) {
+						htmlStringer.setExpandTabs(this.expandTabs);
+					}
+					if (illa.isString(this.attributeChar)) {
+						htmlStringer.setAttributeChar(this.attributeChar);
+					}
 					
 					var outFileContents = htmlStringer.stringify(pml.Parser.parse(this.inFileContents));
 					this.writeOutput(this.outFilePath, outFileContents);
@@ -144,33 +168,43 @@ t, tidy ................... Tidies the input file.
 l, lint ................... Lints the input file.
 `);
 					this.log(chalk.bold('\nOptions for HTML mode:') + `
+--attribute-char [string] . Set the character that attribute node names start
+                            with. Default: '@'
+--compress, -c ............ Remove unnecessary white space.
 --eol-char [string] ....... Specifies the character(s) used for line breaks.
+--expand-line-breaks ...... Replace EOL characters with <br/>s.
+--expand-tabs ............. Replace tab characters with the tab expansion
+                            string.
 --indent-char [string] .... Specifies the character(s) used for indentation.
---inline-tags [pml] ....... Names of tags that are inline. Ex. <span>. Pair
-                            keys will be read from [pml]'s root.
+--inline-tags [pml] ....... Names of tags that are inline. Ex. <span>. Node
+                            names will be read from [pml]'s root.
 --inline-doc-tags [pml] ... Names of tags that are inline only if their child
-                            tags are all inline. Ex. <a>. Pair keys will be
+                            tags are all inline. Ex. <a>. Node names will be
                             read from [pml]'s root.
 --no-end-tags [pml] ....... Names of tags that have no closing tag. Ex. <img>.
-                            Pair keys will be read from [pml]'s root.
+                            Node names will be read from [pml]'s root.
+--no-lbe-tags [pml] ....... Names of tags in which no line break expansion
+                            should be done. Ex. <title>. Node names will be
+                            read from [pml]'s root.
 --nrc-tags [pml] .......... Names of non-replaceable character tags. Ex.
-                            <script>. Pair keys will be read from [pml]'s
+                            <script>. Node names will be read from [pml]'s
                             root.
 --out, -o [output file] ... Specifies output file path. If not specified,
                             defaults to stdout.
 --overwrite, -ow .......... Overwrite existing output file(s).
---pre-tags [pml] .......... Names of preformatted tags. Ex. <pre>. Pair keys
+--pre-tags [pml] .......... Names of preformatted tags. Ex. <pre>. Node names
                             will be read from [pml]'s root.
 `);
 					this.log(chalk.bold('\nOptions for Tidy mode:') + `
 --eol-char [string] ....... Specifies the character(s) used for line breaks.
---ignored-to-pair, -i2p ... Convert ignored values (text next to pairs) to a
-                            pair rather than a comment.
+--ignored-to-node, -i2n ... Convert ignored values (text outside child nodes)
+                            to a node rather than a comment.
 --indent-char [string] .... Specifies the character(s) used for indentation.
 --out, -o [output file] ... Specifies output file path. If not specified,
                             defaults to stdout.
 --overwrite, -ow .......... Overwrite existing output file(s).
 --overwrite-source ........ Overwrite input file(s) with the new content.
+--tab-expansion [string] .. Set the character(s) tabs will be expanded to.
 `);
 					break;
 				default:
@@ -184,6 +218,17 @@ l, lint ................... Lints the input file.
 			for (var i = 0, n = this.args.length; i < n; i++) {
 				var arg = this.args[i];
 				switch (arg) {
+					case '--attribute-char':
+						this.attributeChar = this.args[++i];
+						if (!illa.isString(this.attributeChar)) {
+							this.error(arg + ' is missing the string parameter.');
+							this.fail(1);
+						}
+						break;
+					case '-c':
+					case '--compress':
+						this.prettyPrint = false;
+						break;
 					case '--eol-char':
 						this.eolChar = this.args[++i];
 						if (!illa.isString(this.eolChar)) {
@@ -191,9 +236,15 @@ l, lint ................... Lints the input file.
 							this.fail(1);
 						}
 						break;
-					case '--i2p':
-					case '--ignored-to-pair':
-						this.convertIgnoredValueToPair = true;
+					case '--expand-line-breaks':
+						this.expandLineBreaks = true;
+						break;
+					case '--expand-tabs':
+						this.expandTabs = true;
+						break;
+					case '--i2n':
+					case '--ignored-to-node':
+						this.convertIgnoredValueToNode = true;
 						break;
 					case '--indent-char':
 						this.indentChar = this.args[++i];
@@ -204,7 +255,7 @@ l, lint ................... Lints the input file.
 						break;
 					case '--inline-doc-tags':
 						try {
-							this.inlineDependingOnContentTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+							this.inlineDependingOnContentTags = this.getChildNames(pml.Parser.parse(this.args[++i]));
 						} catch (e) {
 							this.error(e);
 							this.error(arg + ' needs valid PML as parameter.');
@@ -213,7 +264,7 @@ l, lint ................... Lints the input file.
 						break;
 					case '--inline-tags':
 						try {
-							this.inlineTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+							this.inlineTags = this.getChildNames(pml.Parser.parse(this.args[++i]));
 						} catch (e) {
 							this.error(e);
 							this.error(arg + ' needs valid PML as parameter.');
@@ -222,7 +273,16 @@ l, lint ................... Lints the input file.
 						break;
 					case '--no-end-tags':
 						try {
-							this.noEndTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+							this.noEndTags = this.getChildNames(pml.Parser.parse(this.args[++i]));
+						} catch (e) {
+							this.error(e);
+							this.error(arg + ' needs valid PML as parameter.');
+							this.fail(1);
+						}
+						break;
+					case '--no-lbe-tags':
+						try {
+							this.noLineBreakExpansionTags = this.getChildNames(pml.Parser.parse(this.args[++i]));
 						} catch (e) {
 							this.error(e);
 							this.error(arg + ' needs valid PML as parameter.');
@@ -231,7 +291,7 @@ l, lint ................... Lints the input file.
 						break;
 					case '--nrc-tags':
 						try {
-							this.nonReplaceableCharacterTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+							this.nonReplaceableCharacterTags = this.getChildNames(pml.Parser.parse(this.args[++i]));
 						} catch (e) {
 							this.error(e);
 							this.error(arg + ' needs valid PML as parameter.');
@@ -256,10 +316,17 @@ l, lint ................... Lints the input file.
 						break;
 					case '--pre-tags':
 						try {
-							this.preformattedTags = this.getChildKeys(pml.Parser.parse(this.args[++i]));
+							this.preformattedTags = this.getChildNames(pml.Parser.parse(this.args[++i]));
 						} catch (e) {
 							this.error(e);
 							this.error(arg + ' needs valid PML as parameter.');
+							this.fail(1);
+						}
+						break;
+					case '--tab-expansion':
+						this.tabExpansion = this.args[++i];
+						if (!illa.isString(this.tabExpansion)) {
+							this.error(arg + ' is missing the string parameter.');
 							this.fail(1);
 						}
 						break;
@@ -270,10 +337,10 @@ l, lint ................... Lints the input file.
 			}
 		}
 		
-		getChildKeys(pair: pml.Pair): string[] {
+		getChildNames(node: pml.Node): string[] {
 			var result: string[] = [];
-			for (var i = 0, n = pair.children.length; i < n; i++) {
-				result.push(pair.children[i].key);
+			for (var i = 0, n = node.children.length; i < n; i++) {
+				result.push(node.children[i].name);
 			}
 			return result;
 		}
