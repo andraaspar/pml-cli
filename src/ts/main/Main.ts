@@ -1,4 +1,4 @@
-/// <reference path='../../../node_modules/typescript/bin/lib.core.es6.d.ts'/>
+/// <reference path='../../../lib/lib.core.es6.d.ts'/>
 
 /// <reference path='../../../lib/node.d.ts'/>
 
@@ -194,6 +194,7 @@ l, lint ................... Lints the input file.
 --overwrite, -ow .......... Overwrite existing output file(s).
 --pre-tags [pml] .......... Names of preformatted tags. Ex. <pre>. Node names
                             will be read from [pml]'s root.
+--tab-expansion [string] .. Set the character(s) tabs will be expanded to.
 `);
 					this.log(chalk.bold('Options for Tidy mode:') + `
 --eol-char [string] ....... Specifies the character(s) used for line breaks.
@@ -204,7 +205,6 @@ l, lint ................... Lints the input file.
                             defaults to stdout.
 --overwrite, -ow .......... Overwrite existing output file(s).
 --overwrite-source ........ Overwrite input file(s) with the new content.
---tab-expansion [string] .. Set the character(s) tabs will be expanded to.
 `);
 					break;
 				default:

@@ -6,5 +6,5 @@
 /tmp2/
 /lib/
 /build/
-/test/*.html
-/test/out*.pml
+/test/tmp
+/test/build
