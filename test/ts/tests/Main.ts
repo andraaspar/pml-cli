@@ -30,7 +30,7 @@ var shArg = process.platform == 'win32' ? '/c' : '-c';
 describe('pml', function() {
 	describe('help', function() {
 		it('prints the help', function(done) {
-			executePml('help', function(out, err) {
+			executePml('help', '', function(out, err) {
 				expect(out).to.be.not.empty;
 				expect(err).to.be.empty;
 				done();
@@ -42,24 +42,30 @@ describe('pml', function() {
 			unlinkFiles();
 		});
 		it('writes to stdout by default', function(done) {
-			writeFile(inPmlPath, `{[|]}\n[foo|]`);
-			executePml(`tidy "${inPmlPath}"`, function(out, err) {
+			executePml(`tidy STDIN`, `{[|]}\n[foo|]`, function(out, err) {
 				expect(out).to.equal(`{[|]}\n[foo|]`);
 				expect(err).to.be.empty;
 				done();
 			});
 		});
 		it('reports warnings to stderr', function(done) {
-			writeFile(inPmlPath, `{[|]}\n[foo]`);
-			executePml(`tidy "${inPmlPath}"`, function(out, err) {
+			executePml(`tidy STDIN`, `{[|]}\n[foo]`, function(out, err) {
 				expect(out).to.equal(`{[|]}\n[foo|]`);
 				expect(err).to.contain(`Added missing name end delimiter.`);
 				done();
 			});
 		});
+		it('accepts files from the filesystem', function(done) {
+			writeFile(inPmlPath, `{[|]}[foo|]`);
+			executePml(`tidy "${inPmlPath}"`, '', function(out, err) {
+				expect(out).to.equal(`{[|]}\n[foo|]`);
+				expect(err).to.be.empty;
+				done();
+			});
+		});
 		it('writes to a file when --out is specified', function(done) {
 			writeFile(inPmlPath, `{[|]}\n[foo|]`);
-			executePml(`tidy --out "${outPmlPath}" "${inPmlPath}"`, function(out, err) {
+			executePml(`tidy --out "${outPmlPath}" "${inPmlPath}"`, '', function(out, err) {
 				expect(out).to.contain(`Output written to ${outPmlPath}`);
 				expect(err).to.be.empty;
 				expect(readFile(outPmlPath)).to.equal(`{[|]}\n[foo|]`);
@@ -69,7 +75,7 @@ describe('pml', function() {
 		it('does not overwrite an existing file', function(done) {
 			writeFile(inPmlPath, `{[|]}\n[foo|]`);
 			writeFile(outPmlPath, '');
-			executePml(`tidy --out "${outPmlPath}" "${inPmlPath}"`, function(out, err) {
+			executePml(`tidy --out "${outPmlPath}" "${inPmlPath}"`, '', function(out, err) {
 				expect(err).to.contain(`Output file already exists.`);
 				expect(readFile(outPmlPath)).to.equal('');
 				done();
@@ -78,7 +84,7 @@ describe('pml', function() {
 		it('does overwrite an existing file when --overwrite is specified', function(done) {
 			writeFile(inPmlPath, `{[|]}\n[foo|]`);
 			writeFile(outPmlPath, '');
-			executePml(`tidy --overwrite --out "${outPmlPath}" "${inPmlPath}"`, function(out, err) {
+			executePml(`tidy --overwrite --out "${outPmlPath}" "${inPmlPath}"`, '', function(out, err) {
 				expect(out).to.contain(`Output written to ${outPmlPath}`);
 				expect(err).to.be.empty;
 				expect(readFile(outPmlPath)).to.equal(`{[|]}\n[foo|]`);
@@ -87,7 +93,7 @@ describe('pml', function() {
 		});
 		it('does overwrite the source file when --overwrite-source is specified', function(done) {
 			writeFile(inPmlPath, `{[|]}[foo|]`);
-			executePml(`tidy --overwrite-source "${inPmlPath}"`, function(out, err) {
+			executePml(`tidy --overwrite-source "${inPmlPath}"`, '', function(out, err) {
 				expect(out).to.contain(`Output written to ${inPmlPath}`);
 				expect(err).to.be.empty;
 				expect(readFile(inPmlPath)).to.equal(`{[|]}\n[foo|]`);
@@ -114,12 +120,16 @@ function readFile(filePath: string): string {
 	return fs.readFileSync(filePath, {encoding: 'utf8'});
 }
 
-function executePml(args: string, outputHandler: (out: string, err: string) => void): void {
+function executePml(args: string, stdin: string, outputHandler: (out: string, err: string) => void): void {
 	var cp = child_process.spawn(sh, [shArg, 'node build/pml-cli.js ' + args], {
 		cwd: process.cwd(),
 		windowsVerbatimArguments: process.platform == 'win32',
 		detached: process.platform != 'win32'
 	});
+	if (stdin) {
+		cp.stdin.write(stdin);
+		cp.stdin.end();
+	}
 	var allStdout = '';
 	var allStderr = '';
 	cp.stdout.setEncoding('utf8');

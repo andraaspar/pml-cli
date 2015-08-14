@@ -24,7 +24,7 @@ module pml_cli {
 		
 		private messages: pml.Message[] = [];
 		private argsRead: boolean = false;
-		private outputToStdOut: boolean;
+		private outputResultToStdOut: boolean;
 		
 		private args: string[];
 		private command: string;
@@ -60,16 +60,26 @@ module pml_cli {
 			this.parseOptions();
 			
 			this.argsRead = true;
-			this.outputToStdOut = !this.outFilePath;
+			this.outputResultToStdOut = !this.outFilePath;
 			this.flushLogBuffer();
 			
 			switch (this.command) {
+				case '?':
+				case 'help':
+					this.onInFileLoaded();
+					break;
+				default:
+					this.loadInFile();
+			}
+		}
+		
+		onInFileLoaded(): void {
+			switch (this.command) {
 				case 'l':
 				case 'lint':
-					this.outputToStdOut = false;
+					this.outputResultToStdOut = false;
 					this.flushLogBuffer();
 					
-					this.loadInFile();
 					this.log(chalk.bold('Linting ' + this.inFilePath + ' ...'));
 					
 					var linter = new pml.Linter();
@@ -78,7 +88,6 @@ module pml_cli {
 					break;
 				case 't':
 				case 'tidy':
-					this.loadInFile();
 					this.log(chalk.bold('Tidying ' + this.inFilePath + ' ...'));
 					
 					if (this.outFilePath) {
@@ -102,7 +111,6 @@ module pml_cli {
 					break;
 				case 'h':
 				case 'html':
-					this.loadInFile();
 					this.log(chalk.bold('Converting ' + this.inFilePath + ' to HTML ...'));
 					
 					if (!this.outFilePath) {
@@ -157,10 +165,10 @@ module pml_cli {
 					break;
 				case '?':
 				case 'help':
-					this.outputToStdOut = false;
+					this.outputResultToStdOut = false;
 					this.flushLogBuffer();
 					
-					this.log('Usage: ' + chalk.bold('pml [command] [options...] [input file]'));
+					this.log('Usage: ' + chalk.bold('pml [command] [options...] [input file or STDIN]'));
 					this.log(chalk.bold('\nCommands:') + `
 ?, help ................... Displays this help.
 h, html ................... Generates HTML from the input file.
@@ -346,12 +354,24 @@ l, lint ................... Lints the input file.
 		}
 		
 		loadInFile(): void {
-			if (!fs.existsSync(this.inFilePath)) {
-				this.error('Input file not found.');
-				this.fail(1);
+			if (this.inFilePath == 'STDIN') {
+				this.inFileContents = '';
+				process.stdin.setEncoding('utf8');
+				process.stdin.on('data', illa.bind(this.onStdinData, this));
+				process.stdin.on('end', illa.bind(this.onInFileLoaded, this));
+			} else {
+				if (!fs.existsSync(this.inFilePath)) {
+					this.error('Input file not found.');
+					this.fail(1);
+				}
+				
+				this.inFileContents = fs.readFileSync(this.inFilePath, 'utf8');
+				this.onInFileLoaded();
 			}
-			
-			this.inFileContents = fs.readFileSync(this.inFilePath, 'utf8');
+		}
+		
+		onStdinData(data: string): void {
+			this.inFileContents += data;
 		}
 		
 		checkOutFileExists(): void {
@@ -390,7 +410,7 @@ l, lint ................... Lints the input file.
 		
 		log(...args): void {
 			var message = args.join(' ') + '\n';
-			if (this.argsRead && !this.outputToStdOut) {
+			if (this.argsRead && !this.outputResultToStdOut) {
 				process.stdout.write(message);
 			} else {
 				this.messages.push(new pml.Message(pml.MessageKind.INFO, 0, 0, message));
@@ -408,7 +428,7 @@ l, lint ................... Lints the input file.
 						i--;
 						break;
 					default:
-						if (!this.outputToStdOut) {
+						if (!this.outputResultToStdOut) {
 							process.stdout.write(message.message);
 						}
 				}
