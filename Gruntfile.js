@@ -96,8 +96,8 @@ module.exports = function(grunt) {
 			compile_tests: {
 				command: '"node_modules/.bin/tsc" --noLib --out "test/build/test.js" "test/ts/tests/Main.ts"'
 			},
-			mocha: {
-				command: '"node_modules/.bin/mocha" --reporter dot "test/build/test.js"'
+			jasmine: {
+				command: '"node_modules/.bin/jasmine"'
 			},
 			update: {
 				command: [
@@ -120,7 +120,7 @@ module.exports = function(grunt) {
 		'shell:compile',
 		'concat:compile',
 		'shell:compile_tests',
-		'shell:mocha',
+		'shell:jasmine',
 	]);
 	grunt.registerTask('update', [
 		'clean:update',

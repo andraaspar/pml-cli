@@ -1,20 +1,14 @@
 /// <reference path='../../../lib/node.d.ts'/>
 /// <reference path='../../../lib/lib.core.es6.d.ts'/>
 /// <reference path='../../../lib/illa/_module.ts'/>
+/// <reference path='../../../lib/illa/StringUtil.ts'/>
 
-/// <reference path='../mocha.d.ts'/>
-/// <reference path='../chai.d.ts'/>
-/// <reference path='../sinon.d.ts'/>
-
-illa.GLOBAL.chai = require('chai');
-illa.GLOBAL.sinon = require('sinon');
+/// <reference path='../jasmine.d.ts'/>
 
 illa.GLOBAL.child_process = require('child_process');
 illa.GLOBAL.fs = require('fs');
 illa.GLOBAL.path = require('path');
 illa.GLOBAL.stream = require('stream');
-
-var expect = chai.expect;
 
 var tmpFolderPath = 'test/tmp';
 if (!fs.existsSync(tmpFolderPath)) fs.mkdirSync(tmpFolderPath);
@@ -31,8 +25,8 @@ describe('pml', function() {
 	describe('help', function() {
 		it('prints the help', function(done) {
 			executePml('help', '', function(out, err) {
-				expect(out).to.be.not.empty;
-				expect(err).to.be.empty;
+				expect(out).toMatch(/\S/);
+				expect(err).toBeFalsy();
 				done();
 			});
 		});
@@ -43,32 +37,32 @@ describe('pml', function() {
 		});
 		it('writes to stdout by default', function(done) {
 			executePml(`tidy STDIN`, `{[|]}\n[foo|]`, function(out, err) {
-				expect(out).to.equal(`{[|]}\n[foo|]`);
-				expect(err).to.be.empty;
+				expect(out).toEqual(`{[|]}\n[foo|]`);
+				expect(err).toBeFalsy();
 				done();
 			});
 		});
 		it('reports warnings to stderr', function(done) {
 			executePml(`tidy STDIN`, `{[|]}\n[foo]`, function(out, err) {
-				expect(out).to.equal(`{[|]}\n[foo|]`);
-				expect(err).to.contain(`Added missing name end delimiter.`);
+				expect(out).toEqual(`{[|]}\n[foo|]`);
+				expect(err).toMatch(`Added missing name end delimiter.`);
 				done();
 			});
 		});
 		it('accepts files from the filesystem', function(done) {
 			writeFile(inPmlPath, `{[|]}[foo|]`);
 			executePml(`tidy "${inPmlPath}"`, '', function(out, err) {
-				expect(out).to.equal(`{[|]}\n[foo|]`);
-				expect(err).to.be.empty;
+				expect(out).toEqual(`{[|]}\n[foo|]`);
+				expect(err).toBeFalsy();
 				done();
 			});
 		});
 		it('writes to a file when --out is specified', function(done) {
 			writeFile(inPmlPath, `{[|]}\n[foo|]`);
 			executePml(`tidy --out "${outPmlPath}" "${inPmlPath}"`, '', function(out, err) {
-				expect(out).to.contain(`Output written to ${outPmlPath}`);
-				expect(err).to.be.empty;
-				expect(readFile(outPmlPath)).to.equal(`{[|]}\n[foo|]`);
+				expect(out).toMatch(illa.StringUtil.escapeRegExp(`Output written to ${outPmlPath}`));
+				expect(err).toBeFalsy();
+				expect(readFile(outPmlPath)).toEqual(`{[|]}\n[foo|]`);
 				done();
 			});
 		});
@@ -76,27 +70,27 @@ describe('pml', function() {
 			writeFile(inPmlPath, `{[|]}\n[foo|]`);
 			writeFile(outPmlPath, '');
 			executePml(`tidy --out "${outPmlPath}" "${inPmlPath}"`, '', function(out, err) {
-				expect(err).to.contain(`Output file already exists.`);
-				expect(readFile(outPmlPath)).to.equal('');
+				expect(err).toMatch(`Output file already exists.`);
+				expect(readFile(outPmlPath)).toEqual('');
 				done();
 			});
 		});
-		it('does overwrite an existing file when --overwrite is specified', function(done) {
+		it('overwrites an existing file when --overwrite is specified', function(done) {
 			writeFile(inPmlPath, `{[|]}\n[foo|]`);
 			writeFile(outPmlPath, '');
 			executePml(`tidy --overwrite --out "${outPmlPath}" "${inPmlPath}"`, '', function(out, err) {
-				expect(out).to.contain(`Output written to ${outPmlPath}`);
-				expect(err).to.be.empty;
-				expect(readFile(outPmlPath)).to.equal(`{[|]}\n[foo|]`);
+				expect(out).toMatch(illa.StringUtil.escapeRegExp(`Output written to ${outPmlPath}`));
+				expect(err).toBeFalsy();
+				expect(readFile(outPmlPath)).toEqual(`{[|]}\n[foo|]`);
 				done();
 			});
 		});
-		it('does overwrite the source file when --overwrite-source is specified', function(done) {
+		it('overwrites the source file when --overwrite-source is specified', function(done) {
 			writeFile(inPmlPath, `{[|]}[foo|]`);
 			executePml(`tidy --overwrite-source "${inPmlPath}"`, '', function(out, err) {
-				expect(out).to.contain(`Output written to ${inPmlPath}`);
-				expect(err).to.be.empty;
-				expect(readFile(inPmlPath)).to.equal(`{[|]}\n[foo|]`);
+				expect(out).toMatch(illa.StringUtil.escapeRegExp(`Output written to ${inPmlPath}`));
+				expect(err).toBeFalsy();
+				expect(readFile(inPmlPath)).toEqual(`{[|]}\n[foo|]`);
 				done();
 			});
 		});
